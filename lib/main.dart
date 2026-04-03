@@ -386,7 +386,7 @@ class _QuickActions extends StatelessWidget {
     ];
 
     return SizedBox(
-      height: 108,
+      height: 124,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: items.length,
@@ -394,7 +394,7 @@ class _QuickActions extends StatelessWidget {
         itemBuilder: (context, index) {
           final item = items[index];
           return Container(
-            width: 104,
+            width: 118,
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: Colors.white,
@@ -419,12 +419,19 @@ class _QuickActions extends StatelessWidget {
                   ),
                   child: Icon(item.$1, color: const Color(0xFF123F78)),
                 ),
-                const Spacer(),
-                Text(
-                  item.$2,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF123F78),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.bottomLeft,
+                    child: Text(
+                      item.$2,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF123F78),
+                      ),
+                    ),
                   ),
                 ),
               ],
