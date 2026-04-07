@@ -43,6 +43,10 @@
 	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>GMSApiKey</key>
+	<string>AIzaSyDG9SDXFcfLudzrRWddzGBt1fpQK4TGHh0</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>La app necesita tu ubicacion para mostrar y marcar emergencias cercanas.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 </dict>
