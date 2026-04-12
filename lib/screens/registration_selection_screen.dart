@@ -1,73 +1,100 @@
 import 'package:flutter/material.dart';
 
+import '../app_routes.dart';
+
 class RegistrationSelectionScreen extends StatelessWidget {
   const RegistrationSelectionScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Container(
-              height: 58,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0xFFD8AD20),
-                    Color(0xFFF4C929),
-                  ],
-                ),
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const Expanded(
-                    child: Text(
-                      'Registro',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
+      backgroundColor: const Color(0xFFD8AD20),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFD8AD20),
+              Color(0xFFF0C630),
+              Color(0xFFF8D74E),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: Row(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0x24FFFFFF),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 48),
-                ],
-              ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(22, 28, 22, 18),
-                child: Column(
-                  children: const [
-                    _RegistrationOptionCard(
-                      title: 'Registrar clientes',
-                      icon: Icons.person_add_alt_1_rounded,
-                      illustration: _ClientRegistrationArt(),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text(
+                        'Registro',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
                     ),
-                    SizedBox(height: 18),
-                    _RegistrationOptionCard(
-                      title: 'Registrar asociados de taller',
-                      icon: Icons.garage_rounded,
-                      illustration: _WorkshopRegistrationArt(),
-                    ),
-                    Spacer(),
                   ],
                 ),
               ),
-            ),
-          ],
+              const Padding(
+                padding: EdgeInsets.fromLTRB(22, 12, 22, 0),
+                child: Text(
+                  'Selecciona el tipo de registro con la identidad visual del proyecto.',
+                  style: TextStyle(
+                    color: Colors.white,
+                    height: 1.45,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(22, 20, 22, 18),
+                  child: Column(
+                    children: [
+                      _RegistrationOptionCard(
+                        title: 'Registrar clientes',
+                        icon: Icons.person_add_alt_1_rounded,
+                        illustration: const _ClientRegistrationArt(),
+                        onPressed: () {
+                          Navigator.of(context).pushNamed(
+                            AppRoutes.clientRegistrationForm,
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 18),
+                      _RegistrationOptionCard(
+                        title: 'Registrar asociados de taller',
+                        icon: Icons.garage_rounded,
+                        illustration: const _WorkshopRegistrationArt(),
+                        onPressed: () {},
+                      ),
+                      const Spacer(),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: NavigationBar(
@@ -110,11 +137,13 @@ class _RegistrationOptionCard extends StatelessWidget {
     required this.title,
     required this.icon,
     required this.illustration,
+    required this.onPressed,
   });
 
   final String title;
   final IconData icon;
   final Widget illustration;
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -123,13 +152,13 @@ class _RegistrationOptionCard extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFD8E0EA)),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFEACB63)),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x10000000),
-            blurRadius: 16,
-            offset: Offset(0, 8),
+            color: Color(0x160B285A),
+            blurRadius: 20,
+            offset: Offset(0, 10),
           ),
         ],
       ),
@@ -140,12 +169,12 @@ class _RegistrationOptionCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
-              onPressed: () {},
+              onPressed: onPressed,
               icon: Icon(icon, size: 20),
               label: Text(title),
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFFF5C400),
-                foregroundColor: Colors.black,
+                backgroundColor: const Color(0xFFD8AD20),
+                foregroundColor: const Color(0xFF123F78),
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
             ),

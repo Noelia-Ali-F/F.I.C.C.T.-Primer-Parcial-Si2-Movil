@@ -45,8 +45,12 @@
 	<true/>
 	<key>GMSApiKey</key>
 	<string>AIzaSyDG9SDXFcfLudzrRWddzGBt1fpQK4TGHh0</string>
+	<key>NSCameraUsageDescription</key>
+	<string>La app necesita usar la camara para registrar evidencia de la emergencia.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>La app necesita tu ubicacion para mostrar y marcar emergencias cercanas.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>La app necesita acceso a tus fotos para adjuntar evidencia del vehiculo.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 </dict>

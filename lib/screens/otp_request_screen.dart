@@ -35,7 +35,7 @@ class _OtpRequestScreenState extends State<OtpRequestScreen> {
               _OtpTopBar(onBack: () => Navigator.of(context).pop()),
               const Spacer(),
               const Text(
-                'OTP Verification',
+                'Verificación OTP',
                 style: TextStyle(
                   fontSize: 30,
                   fontWeight: FontWeight.w800,
@@ -44,13 +44,13 @@ class _OtpRequestScreenState extends State<OtpRequestScreen> {
               ),
               const SizedBox(height: 26),
               const Text(
-                'We will send you on One Tme Presword\non this mobile number',
+                'Te enviaremos una contraseña de un solo uso\nal siguiente número de celular',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 14, height: 1.6, color: Colors.black87),
               ),
               const SizedBox(height: 70),
               const Text(
-                'Enter Mobile Number',
+                'Ingresa tu número de celular',
                 style: TextStyle(fontSize: 12, color: Color(0xA6000000)),
               ),
               const SizedBox(height: 10),
@@ -102,7 +102,7 @@ class _OtpRequestScreenState extends State<OtpRequestScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   child: const Text(
-                    'GET OTP',
+                    'OBTENER OTP',
                     style: TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ),
