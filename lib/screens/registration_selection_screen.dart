@@ -8,71 +8,76 @@ class RegistrationSelectionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFD8AD20),
+      backgroundColor: const Color(0xFFF3C83F),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
             colors: [
-              Color(0xFFD8AD20),
-              Color(0xFFF0C630),
-              Color(0xFFF8D74E),
+              Color(0xFFF0B92A),
+              Color(0xFFF6D34F),
+              Color(0xFFFFE58A),
             ],
           ),
         ),
         child: SafeArea(
-          child: Column(
+          child: Stack(
             children: [
+              const Positioned(
+                top: -40,
+                right: -10,
+                child: _RegistrationBackdropCircle(
+                  size: 180,
+                  color: Color(0x26FFFFFF),
+                ),
+              ),
+              const Positioned(
+                top: 120,
+                left: -24,
+                child: _RegistrationBackdropCircle(
+                  size: 120,
+                  color: Color(0x1FFFFFFF),
+                ),
+              ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                child: Row(
+                padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
+                child: Column(
                   children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0x24FFFFFF),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: IconButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        icon: const Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          color: Colors.white,
+                    Row(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0x26FFFFFF),
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          child: IconButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            icon: const Icon(
+                              Icons.arrow_back_ios_new_rounded,
+                              color: Color(0xFF123F78),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Text(
-                        'Registro',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w900,
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Text(
+                            'Registro',
+                            style: TextStyle(
+                              color: Color(0xFF123F78),
+                              fontSize: 25,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-              const Padding(
-                padding: EdgeInsets.fromLTRB(22, 12, 22, 0),
-                child: Text(
-                  'Selecciona el tipo de registro con la identidad visual del proyecto.',
-                  style: TextStyle(
-                    color: Colors.white,
-                    height: 1.45,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(22, 20, 22, 18),
-                  child: Column(
-                    children: [
-                      _RegistrationOptionCard(
-                        title: 'Registrar clientes',
+                    const SizedBox(height: 20),
+                    const _RegistrationHeroPanel(),
+                    const SizedBox(height: 22),
+                    Expanded(
+                      child: _RegistrationOptionCard(
+                        title: 'Crear cuenta de cliente',
                         icon: Icons.person_add_alt_1_rounded,
                         illustration: const _ClientRegistrationArt(),
                         onPressed: () {
@@ -81,50 +86,98 @@ class RegistrationSelectionScreen extends StatelessWidget {
                           );
                         },
                       ),
-                      const SizedBox(height: 18),
-                      _RegistrationOptionCard(
-                        title: 'Registrar asociados de taller',
-                        icon: Icons.garage_rounded,
-                        illustration: const _WorkshopRegistrationArt(),
-                        onPressed: () {},
-                      ),
-                      const Spacer(),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
         ),
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 2,
-        indicatorColor: Color(0x1AFF3B30),
-        destinations: [
-          NavigationDestination(
-            icon: Icon(Icons.home_rounded, color: Color(0xFF858585)),
-            selectedIcon: Icon(Icons.home_rounded, color: Color(0xFFFF3B30)),
-            label: 'Inicio',
+    );
+  }
+}
+
+class _RegistrationBackdropCircle extends StatelessWidget {
+  const _RegistrationBackdropCircle({
+    required this.size,
+    required this.color,
+  });
+
+  final double size;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+      ),
+    );
+  }
+}
+
+class _RegistrationHeroPanel extends StatelessWidget {
+  const _RegistrationHeroPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+      decoration: BoxDecoration(
+        color: const Color(0xFF123F78),
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x220B285A),
+            blurRadius: 24,
+            offset: Offset(0, 12),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_rounded, color: Color(0xFF858585)),
-            selectedIcon: Icon(Icons.settings_rounded, color: Color(0xFFFF3B30)),
-            label: 'Repuestos',
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: const Color(0x1FFFFFFF),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: const Icon(
+              Icons.assignment_ind_rounded,
+              color: Color(0xFFFFD86B),
+              size: 30,
+            ),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.add_circle_rounded, color: Color(0xFFFF3B30), size: 34),
-            selectedIcon: Icon(Icons.add_circle_rounded, color: Color(0xFFFF3B30), size: 34),
-            label: 'Registro',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.handyman_rounded, color: Color(0xFF858585)),
-            selectedIcon: Icon(Icons.handyman_rounded, color: Color(0xFFFF3B30)),
-            label: 'Taller',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.chat_bubble_rounded, color: Color(0xFF858585)),
-            selectedIcon: Icon(Icons.chat_bubble_rounded, color: Color(0xFFFF3B30)),
-            label: 'Chats',
+          const SizedBox(width: 14),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Registro de cliente',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  'Completa tus datos una sola vez para poder solicitar asistencia vehicular desde la app.',
+                  style: TextStyle(
+                    color: Color(0xE8FFFFFF),
+                    height: 1.35,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -149,23 +202,48 @@ class _RegistrationOptionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 22),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFEACB63)),
+        color: const Color(0xFFFFFCF2),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: const Color(0xFFF1D57B)),
         boxShadow: const [
           BoxShadow(
             color: Color(0x160B285A),
-            blurRadius: 20,
-            offset: Offset(0, 10),
+            blurRadius: 24,
+            offset: Offset(0, 12),
           ),
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF0BF),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: const Text(
+              'Acceso cliente',
+              style: TextStyle(
+                color: Color(0xFF123F78),
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
           illustration,
-          const SizedBox(height: 18),
+          const SizedBox(height: 20),
+          const Text(
+            'Activa tu perfil para registrar vehículos, reportar incidentes y consultar tu historial de emergencias.',
+            style: TextStyle(
+              color: Color(0xFF55637C),
+              height: 1.45,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const Spacer(),
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
@@ -173,9 +251,12 @@ class _RegistrationOptionCard extends StatelessWidget {
               icon: Icon(icon, size: 20),
               label: Text(title),
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFFD8AD20),
-                foregroundColor: const Color(0xFF123F78),
-                padding: const EdgeInsets.symmetric(vertical: 14),
+                backgroundColor: const Color(0xFF123F78),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
               ),
             ),
           ),
@@ -191,24 +272,28 @@ class _ClientRegistrationArt extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 128,
+      height: 170,
       child: Stack(
         alignment: Alignment.center,
         children: [
           Container(
-            width: 126,
-            height: 126,
-            decoration: const BoxDecoration(
-              color: Color(0xFFF2F5FA),
-              shape: BoxShape.circle,
+            width: 210,
+            height: 128,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFF5F7FB), Color(0xFFE5ECF7)],
+              ),
+              borderRadius: BorderRadius.circular(32),
             ),
           ),
           Positioned(
-            top: 24,
-            left: 72,
+            top: 18,
+            right: 46,
             child: Container(
-              width: 28,
-              height: 28,
+              width: 36,
+              height: 36,
               decoration: const BoxDecoration(
                 color: Color(0xFFFF77A8),
                 shape: BoxShape.circle,
@@ -216,99 +301,68 @@ class _ClientRegistrationArt extends StatelessWidget {
               child: const Icon(
                 Icons.person_add_alt_1_rounded,
                 color: Colors.white,
-                size: 18,
+                size: 20,
+              ),
+            ),
+          ),
+          Positioned(
+            left: 34,
+            top: 26,
+            child: Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: const Color(0xFF123F78),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Icon(
+                Icons.person_rounded,
+                color: Colors.white,
+                size: 34,
               ),
             ),
           ),
           const Positioned(
-            bottom: 22,
-            child: Icon(Icons.local_shipping_rounded, size: 66, color: Color(0xFFEB9E22)),
+            bottom: 18,
+            right: 40,
+            child: Icon(
+              Icons.directions_car_filled_rounded,
+              size: 76,
+              color: Color(0xFFEB9E22),
+            ),
           ),
           Positioned(
-            bottom: 26,
-            left: 70,
+            bottom: 24,
+            left: 72,
             child: Container(
-              width: 46,
-              height: 32,
+              width: 62,
+              height: 38,
               decoration: BoxDecoration(
                 color: const Color(0xFFE2E8F2),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
           ),
           Positioned(
-            bottom: 38,
-            right: 62,
+            bottom: 54,
+            right: 30,
             child: Container(
-              width: 54,
-              height: 42,
+              width: 58,
+              height: 18,
               decoration: BoxDecoration(
                 color: const Color(0xFFC8D2E2),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(20),
               ),
             ),
           ),
           const Positioned(
-            bottom: 22,
-            left: 56,
-            child: Icon(Icons.warning_amber_rounded, size: 30, color: Color(0xFFFF6B6B)),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _WorkshopRegistrationArt extends StatelessWidget {
-  const _WorkshopRegistrationArt();
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 128,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(
-            width: 126,
-            height: 126,
-            decoration: const BoxDecoration(
-              color: Color(0xFFF2F5FA),
-              shape: BoxShape.circle,
+            bottom: 18,
+            left: 40,
+            child: Icon(
+              Icons.verified_user_rounded,
+              size: 30,
+              color: Color(0xFF2CB56F),
             ),
-          ),
-          Positioned(
-            bottom: 22,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.person_rounded, size: 34, color: Color(0xFF2E3138)),
-                const SizedBox(width: 14),
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    const Icon(Icons.car_repair_rounded, size: 76, color: Color(0xFFF0B92A)),
-                    Positioned(
-                      bottom: 6,
-                      right: -2,
-                      child: Container(
-                        width: 38,
-                        height: 22,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF2CB56F),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const Positioned(
-            top: 18,
-            right: 70,
-            child: Icon(Icons.handyman_rounded, size: 26, color: Color(0xFF123F78)),
           ),
         ],
       ),

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../app_routes.dart';
+import '../services/client_registration_service.dart';
 import 'client_registration_form_screen.dart';
 
 class ClientEmailOtpScreen extends StatefulWidget {
@@ -27,6 +28,7 @@ class _ClientEmailOtpScreenState extends State<ClientEmailOtpScreen> {
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
   Timer? _timer;
   int _secondsRemaining = 45;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -66,6 +68,71 @@ class _ClientEmailOtpScreenState extends State<ClientEmailOtpScreen> {
 
   bool get _canVerify =>
       _controllers.every((controller) => controller.text.trim().length == 1);
+
+  Future<void> _submitRegistration() async {
+    if (_isSubmitting) {
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    final result = await ClientRegistrationService.registerClient(widget.data);
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() => _isSubmitting = false);
+
+    if (!result.isSuccess) {
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Registro no enviado'),
+          content: Text(
+            result.statusCode == 0
+                ? result.message
+                : 'Backend: ${result.statusCode}\n${result.message}',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cerrar'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Registro confirmado'),
+        content: Text(
+          result.clientId == null
+              ? 'Backend: ${result.statusCode}\nEl cliente fue creado correctamente.'
+              : 'Backend: ${result.statusCode}\nCliente creado con ID ${result.clientId}.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Continuar'),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.of(context).pushReplacementNamed(
+      AppRoutes.clientRegistrationSuccess,
+      arguments: widget.data,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -213,13 +280,8 @@ class _ClientEmailOtpScreenState extends State<ClientEmailOtpScreen> {
               SizedBox(
                 width: 210,
                 child: FilledButton(
-                  onPressed: _canVerify
-                      ? () {
-                          Navigator.of(context).pushReplacementNamed(
-                            AppRoutes.clientRegistrationSuccess,
-                            arguments: widget.data,
-                          );
-                        }
+                  onPressed: _canVerify && !_isSubmitting
+                      ? _submitRegistration
                       : null,
                   style: FilledButton.styleFrom(
                     backgroundColor: Colors.white,
@@ -230,10 +292,19 @@ class _ClientEmailOtpScreenState extends State<ClientEmailOtpScreen> {
                     ),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  child: const Text(
-                    'VERIFICAR Y CONTINUAR',
-                    style: TextStyle(fontWeight: FontWeight.w700),
-                  ),
+                  child: _isSubmitting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.black87,
+                          ),
+                        )
+                      : const Text(
+                          'VERIFICAR Y CONTINUAR',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
                 ),
               ),
               const Spacer(flex: 2),

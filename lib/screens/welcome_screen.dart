@@ -30,12 +30,11 @@ class WelcomeScreen extends StatelessWidget {
                   constraints: BoxConstraints(minHeight: constraints.maxHeight),
                   child: Column(
                     children: [
-                      const _StatusRow(),
                       Padding(
                         padding: const EdgeInsets.fromLTRB(22, 8, 22, 0),
                         child: Column(
                           children: [
-                            const SizedBox(height: 18),
+                            const SizedBox(height: 10),
                             const _WorkshopIllustration(),
                             const SizedBox(height: 24),
                             Align(
@@ -77,35 +76,6 @@ class WelcomeScreen extends StatelessWidget {
   }
 }
 
-class _StatusRow extends StatelessWidget {
-  const _StatusRow();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.fromLTRB(18, 10, 18, 0),
-      child: Row(
-        children: [
-          Text(
-            '10:30 AM',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          Spacer(),
-          Icon(Icons.signal_cellular_alt_rounded, color: Colors.white, size: 18),
-          SizedBox(width: 6),
-          Icon(Icons.wifi_rounded, color: Colors.white, size: 18),
-          SizedBox(width: 6),
-          Icon(Icons.battery_full_rounded, color: Colors.white, size: 18),
-        ],
-      ),
-    );
-  }
-}
-
 class _WorkshopIllustration extends StatelessWidget {
   const _WorkshopIllustration();
 
@@ -137,9 +107,9 @@ class _WorkshopIllustration extends StatelessWidget {
               ],
             ),
           ),
-          Positioned(
+          const Positioned(
             top: 68,
-            child: const _MiniCar(
+            child: _MiniCar(
               width: 170,
               bodyColor: Color(0xFFF5F7FA),
               accentColor: Color(0xFFB7C2D6),

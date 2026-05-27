@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/auth_models.dart';
+import '../utils/double_back_logout_scope.dart';
 import '../utils/logout_dialog.dart';
 
 class WorkshopHomeScreen extends StatelessWidget {
@@ -16,92 +17,94 @@ class WorkshopHomeScreen extends StatelessWidget {
       ('Combustible', 'Asignación directa', '6.0 km'),
     ];
 
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        title: const Text('Taller (A2)'),
-        actions: [
-          IconButton(
-            onPressed: () => showLogoutDialog(context),
-            icon: const Icon(Icons.logout_rounded),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Bienvenido, ${user.displayName}',
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF123F78),
+    return DoubleBackLogoutScope(
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.white,
+          title: const Text('Taller (A2)'),
+          actions: [
+            IconButton(
+              onPressed: () => showLogoutDialog(context),
+              icon: const Icon(Icons.logout_rounded),
+            ),
+          ],
+        ),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Bienvenido, ${user.displayName}',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF123F78),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Administra las solicitudes disponibles y responde rápidamente a emergencias asignadas.',
-                style: TextStyle(
-                  color: Color(0xFF55637C),
-                  height: 1.5,
+                const SizedBox(height: 8),
+                const Text(
+                  'Administra las solicitudes disponibles y responde rápidamente a emergencias asignadas.',
+                  style: TextStyle(
+                    color: Color(0xFF55637C),
+                    height: 1.5,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 22),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x120B285A),
-                      blurRadius: 18,
-                      offset: Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'SOLICITUDES DISPONIBLES',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF2F3647),
+                const SizedBox(height: 22),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x120B285A),
+                        blurRadius: 18,
+                        offset: Offset(0, 8),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    ...requests.map(
-                      (request) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _WorkshopRequestCard(
-                          title: request.$1,
-                          detail: request.$2,
-                          distance: request.$3,
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'SOLICITUDES DISPONIBLES',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF2F3647),
                         ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+                      ...requests.map(
+                        (request) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _WorkshopRequestCard(
+                            title: request.$1,
+                            detail: request.$2,
+                            distance: request.$3,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 0,
-        destinations: [
-          NavigationDestination(icon: Icon(Icons.list_alt_rounded), label: 'Solicitudes'),
-          NavigationDestination(icon: Icon(Icons.map_rounded), label: 'Cobertura'),
-          NavigationDestination(icon: Icon(Icons.build_rounded), label: 'Servicios'),
-          NavigationDestination(icon: Icon(Icons.person_rounded), label: 'Perfil'),
-        ],
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: 0,
+          destinations: [
+            NavigationDestination(icon: Icon(Icons.list_alt_rounded), label: 'Solicitudes'),
+            NavigationDestination(icon: Icon(Icons.map_rounded), label: 'Cobertura'),
+            NavigationDestination(icon: Icon(Icons.build_rounded), label: 'Servicios'),
+            NavigationDestination(icon: Icon(Icons.person_rounded), label: 'Perfil'),
+          ],
+        ),
       ),
     );
   }

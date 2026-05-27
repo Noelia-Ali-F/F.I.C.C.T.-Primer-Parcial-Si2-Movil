@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 
+import 'app_navigation.dart';
 import 'app_routes.dart';
 import 'screens/welcome_screen.dart';
 
-class TallerAcbApp extends StatelessWidget {
+class TallerAcbApp extends StatefulWidget {
   const TallerAcbApp({super.key});
 
+  @override
+  State<TallerAcbApp> createState() => _TallerAcbAppState();
+}
+
+class _TallerAcbAppState extends State<TallerAcbApp> {
   @override
   Widget build(BuildContext context) {
     const navy = Color(0xFF123F78);
@@ -14,7 +20,8 @@ class TallerAcbApp extends StatelessWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Taller ACB Asistencia',
+      title: 'Taller ACB',
+      navigatorKey: appNavigatorKey,
       theme: ThemeData(
         useMaterial3: true,
         scaffoldBackgroundColor: canvas,

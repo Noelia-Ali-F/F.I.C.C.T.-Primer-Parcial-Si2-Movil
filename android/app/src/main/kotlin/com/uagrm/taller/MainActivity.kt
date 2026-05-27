@@ -1,4 +1,4 @@
-package bo.edu.uagrm.ficct.ficct_primer_parcial_si2_diagramador_movil
+package com.uagrm.taller
 
 import io.flutter.embedding.android.FlutterActivity
 

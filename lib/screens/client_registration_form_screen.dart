@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../app_routes.dart';
+import '../services/client_registration_service.dart';
+import '../services/push_device_registration_service.dart';
 
 class ClientRegistrationData {
   const ClientRegistrationData({
@@ -38,6 +40,7 @@ class _ClientRegistrationFormScreenState
       TextEditingController();
 
   bool _acceptTerms = false;
+  bool _isSubmitting = false;
   bool _showPassword = false;
   bool _showConfirmPassword = false;
 
@@ -52,7 +55,7 @@ class _ClientRegistrationFormScreenState
     super.dispose();
   }
 
-  void _submitForm() {
+  Future<void> _submitForm() async {
     final isValid = _formKey.currentState?.validate() ?? false;
     if (!isValid) {
       return;
@@ -69,15 +72,81 @@ class _ClientRegistrationFormScreenState
       return;
     }
 
-    Navigator.of(context).pushNamed(
-      AppRoutes.clientRegistrationValidation,
-      arguments: ClientRegistrationData(
-        identityCard: _identityCardController.text.trim(),
-        fullName: _nameController.text.trim(),
-        email: _emailController.text.trim(),
-        phone: _phoneController.text.trim(),
-        password: _passwordController.text,
+    if (_isSubmitting) {
+      return;
+    }
+
+    final data = ClientRegistrationData(
+      identityCard: _identityCardController.text.trim(),
+      fullName: _nameController.text.trim(),
+      email: _emailController.text.trim(),
+      phone: _phoneController.text.trim(),
+      password: _passwordController.text,
+    );
+
+    setState(() => _isSubmitting = true);
+
+    final result = await ClientRegistrationService.registerClient(data);
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() => _isSubmitting = false);
+
+    if (!result.isSuccess) {
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Registro no enviado'),
+          content: Text(
+            result.statusCode == 0
+                ? result.message
+                : 'Backend: ${result.statusCode}\n${result.message}',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cerrar'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Registro confirmado'),
+        content: Text(
+          result.clientId == null
+              ? 'Backend: ${result.statusCode}\nEl cliente fue creado correctamente.'
+              : 'Backend: ${result.statusCode}\nCliente creado con ID ${result.clientId}.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Continuar'),
+          ),
+        ],
       ),
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    if (result.clientId != null) {
+      await PushDeviceRegistrationService.updateCurrentClientUserId(
+        result.clientId,
+      );
+    }
+
+    Navigator.of(context).pushNamed(
+      AppRoutes.clientRegistrationSuccess,
+      arguments: data,
     );
   }
 
@@ -373,7 +442,7 @@ class _ClientRegistrationFormScreenState
                         SizedBox(
                           width: double.infinity,
                           child: FilledButton(
-                            onPressed: _submitForm,
+                            onPressed: _isSubmitting ? null : _submitForm,
                             style: FilledButton.styleFrom(
                               backgroundColor: const Color(0xFFD8AD20),
                               foregroundColor: const Color(0xFF123F78),
@@ -382,10 +451,19 @@ class _ClientRegistrationFormScreenState
                                 borderRadius: BorderRadius.circular(14),
                               ),
                             ),
-                            child: const Text(
-                              'Crear cuenta',
-                              style: TextStyle(fontWeight: FontWeight.w900),
-                            ),
+                            child: _isSubmitting
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Color(0xFF123F78),
+                                    ),
+                                  )
+                                : const Text(
+                                    'Crear cuenta',
+                                    style: TextStyle(fontWeight: FontWeight.w900),
+                                  ),
                           ),
                         ),
                       ],

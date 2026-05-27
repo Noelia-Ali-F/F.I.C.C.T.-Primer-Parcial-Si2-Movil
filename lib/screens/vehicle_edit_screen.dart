@@ -1,24 +1,39 @@
 import 'package:flutter/material.dart';
 
+import '../models/vehicle_models.dart';
+import '../services/vehicle_service.dart';
+
 class VehicleEditArgs {
   const VehicleEditArgs({
-    required this.title,
-    required this.subtitle,
+    this.id,
+    required this.clientId,
+    required this.brand,
+    required this.model,
+    required this.year,
+    required this.plate,
+    required this.color,
     required this.isPrimary,
   });
 
-  final String title;
-  final String subtitle;
+  final int? id;
+  final int clientId;
+  final String brand;
+  final String model;
+  final String year;
+  final String plate;
+  final String color;
   final bool isPrimary;
 }
 
 class VehicleEditResult {
   const VehicleEditResult({
     required this.summary,
+    required this.color,
     required this.isPrimary,
   });
 
   final String summary;
+  final String color;
   final bool isPrimary;
 }
 
@@ -43,35 +58,33 @@ class _VehicleEditScreenState extends State<VehicleEditScreen> {
 
   final List<Color> _availableColors = const [
     Color(0xFFF3F4F6),
-    Color(0xFF6C98D1),
-    Color(0xFF8D99AE),
+    Color(0xFF9CA3AF),
+    Color(0xFFD6B256),
+    Color(0xFF1F2937),
   ];
 
   int _selectedColorIndex = 1;
   late bool _isPrimaryVehicle = widget.args.isPrimary;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
     super.initState();
-    final titleParts = widget.args.title.split(' ');
-    final subtitleParts = widget.args.subtitle.split('·');
-
     _brandController = TextEditingController(
-      text: titleParts.isNotEmpty ? titleParts.first : 'Marca',
+      text: widget.args.brand,
     );
     _modelController = TextEditingController(
-      text: titleParts.length > 1 ? titleParts.sublist(1).join(' ') : widget.args.title,
+      text: widget.args.model,
     );
     _yearController = TextEditingController(
-      text: subtitleParts.isNotEmpty
-          ? subtitleParts.first.replaceAll(RegExp(r'[^0-9]'), '')
-          : '2016',
+      text: widget.args.year,
     );
     _plateController = TextEditingController(
-      text: subtitleParts.length > 1
-          ? subtitleParts.last.replaceAll('Principal', '').trim()
-          : widget.args.subtitle,
+      text: widget.args.plate,
     );
+    const colorLabels = ['blanco', 'gris', 'dorado', 'negro'];
+    final initialColorIndex = colorLabels.indexOf(widget.args.color.toLowerCase());
+    _selectedColorIndex = initialColorIndex >= 0 ? initialColorIndex : 1;
   }
 
   @override
@@ -101,16 +114,64 @@ class _VehicleEditScreenState extends State<VehicleEditScreen> {
     return null;
   }
 
-  void _save() {
+  Future<void> _save() async {
     final isValid = _formKey.currentState?.validate() ?? false;
-    if (!isValid) {
+    if (!isValid || _isSubmitting) {
       return;
+    }
+
+    const colorLabels = ['blanco', 'gris', 'dorado', 'negro'];
+    final vehicleData = VehicleRegistrationData(
+      clientId: widget.args.clientId,
+      brand: _brandController.text.trim(),
+      model: _modelController.text.trim(),
+      year: int.parse(_yearController.text.trim()),
+      plate: _plateController.text.trim().toUpperCase(),
+      color: colorLabels[_selectedColorIndex],
+      isPrimary: _isPrimaryVehicle,
+    );
+
+    if (widget.args.id != null) {
+      setState(() => _isSubmitting = true);
+
+      final response = await VehicleService.updateVehicle(
+        vehicleId: widget.args.id!,
+        data: vehicleData,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() => _isSubmitting = false);
+
+      if (!response.isSuccess) {
+        await showDialog<void>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Actualización no enviada'),
+            content: Text(
+              response.statusCode == 0
+                  ? response.message
+                  : 'Backend: ${response.statusCode}\n${response.message}',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cerrar'),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
     }
 
     Navigator.of(context).pop(
       VehicleEditResult(
         summary:
-            '${_brandController.text.trim()} ${_modelController.text.trim()} · ${_yearController.text.trim()} · ${_plateController.text.trim()}',
+            '${vehicleData.brand} ${vehicleData.model} ${vehicleData.year} · ${vehicleData.plate}',
+        color: vehicleData.color,
         isPrimary: _isPrimaryVehicle,
       ),
     );
@@ -328,10 +389,19 @@ class _VehicleEditScreenState extends State<VehicleEditScreen> {
                               borderRadius: BorderRadius.circular(14),
                             ),
                           ),
-                          child: const Text(
-                            'Guardar',
-                            style: TextStyle(fontWeight: FontWeight.w800),
-                          ),
+                          child: _isSubmitting
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Color(0xFF123F78),
+                                  ),
+                                )
+                              : const Text(
+                                  'Guardar',
+                                  style: TextStyle(fontWeight: FontWeight.w800),
+                                ),
                         ),
                       ),
                     ],

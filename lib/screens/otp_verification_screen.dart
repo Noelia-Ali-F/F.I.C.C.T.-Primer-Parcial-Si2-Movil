@@ -1,11 +1,28 @@
 import 'package:flutter/material.dart';
 
 import '../app_routes.dart';
+import '../models/auth_models.dart';
+import 'password_reset_screen.dart';
 
-class OtpVerificationScreen extends StatefulWidget {
-  const OtpVerificationScreen({super.key, required this.phoneNumber});
+class OtpVerificationArgs {
+  const OtpVerificationArgs({
+    required this.phoneNumber,
+    this.email,
+    this.accountType = UserRole.client,
+  });
 
   final String phoneNumber;
+  final String? email;
+  final UserRole accountType;
+}
+
+class OtpVerificationScreen extends StatefulWidget {
+  const OtpVerificationScreen({
+    super.key,
+    required this.args,
+  });
+
+  final OtpVerificationArgs args;
 
   @override
   State<OtpVerificationScreen> createState() => _OtpVerificationScreenState();
@@ -64,7 +81,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                   children: [
                     const TextSpan(text: 'Enter the OTP sent to '),
                     TextSpan(
-                      text: widget.phoneNumber,
+                      text: widget.args.phoneNumber,
                       style: const TextStyle(fontWeight: FontWeight.w800),
                     ),
                   ],
@@ -93,7 +110,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                           counterText: '',
                           filled: true,
                           fillColor: Colors.white,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 12),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide.none,
@@ -136,7 +154,11 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                 child: FilledButton(
                   onPressed: _canVerify
                       ? () => Navigator.of(context).pushReplacementNamed(
-                            AppRoutes.dashboard,
+                            AppRoutes.passwordReset,
+                            arguments: PasswordResetArgs(
+                              email: widget.args.email,
+                              accountType: widget.args.accountType,
+                            ),
                           )
                       : null,
                   style: FilledButton.styleFrom(
@@ -174,7 +196,8 @@ class _OtpTopBar extends StatelessWidget {
       children: [
         IconButton(
           onPressed: onBack,
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black),
+          icon:
+              const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black),
         ),
         const Spacer(),
       ],

@@ -7,11 +7,14 @@ import 'screens/client_registration_success_screen.dart';
 import 'screens/client_registration_validation_screen.dart';
 import 'screens/client_home_screen.dart';
 import 'screens/dashboard_screen.dart';
+import 'screens/emergency_location_screen.dart';
 import 'screens/emergency_request_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/otp_request_screen.dart';
+import 'screens/password_reset_screen.dart';
 import 'screens/otp_verification_screen.dart';
 import 'screens/registration_selection_screen.dart';
+import 'screens/technician_tracking_map_screen.dart';
 import 'screens/workshop_home_screen.dart';
 
 class AppRoutes {
@@ -21,8 +24,11 @@ class AppRoutes {
   static const workshopHome = '/workshop-home';
   static const dashboard = '/dashboard';
   static const emergencyRequest = '/emergency-request';
+  static const emergencyLocation = '/emergency-location';
+  static const technicianTrackingMap = '/technician-tracking-map';
   static const otpRequest = '/otp-request';
   static const otpVerification = '/otp-verification';
+  static const passwordReset = '/password-reset';
   static const clientRegistrationForm = '/client-registration-form';
   static const clientRegistrationValidation = '/client-registration-validation';
   static const clientEmailOtp = '/client-email-otp';
@@ -57,12 +63,36 @@ class AppRoutes {
             args: settings.arguments as EmergencyRequestArgs,
           ),
         );
+      case emergencyLocation:
+        return MaterialPageRoute(
+          builder: (_) => const EmergencyLocationScreen(),
+        );
+      case technicianTrackingMap:
+        return MaterialPageRoute(
+          builder: (_) => TechnicianTrackingMapScreen(
+            args: settings.arguments as TechnicianTrackingMapArgs,
+          ),
+        );
       case otpRequest:
-        return MaterialPageRoute(builder: (_) => const OtpRequestScreen());
+        return MaterialPageRoute(
+          builder: (_) => OtpRequestScreen(
+            args: settings.arguments as OtpRequestArgs?,
+          ),
+        );
       case otpVerification:
         return MaterialPageRoute(
           builder: (_) => OtpVerificationScreen(
-            phoneNumber: settings.arguments as String,
+            args: settings.arguments is OtpVerificationArgs
+                ? settings.arguments as OtpVerificationArgs
+                : OtpVerificationArgs(
+                    phoneNumber: settings.arguments as String,
+                  ),
+          ),
+        );
+      case passwordReset:
+        return MaterialPageRoute(
+          builder: (_) => PasswordResetScreen(
+            args: settings.arguments as PasswordResetArgs?,
           ),
         );
       case clientRegistrationForm:

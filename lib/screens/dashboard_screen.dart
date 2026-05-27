@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/auth_models.dart';
+import '../utils/double_back_logout_scope.dart';
 import '../utils/logout_dialog.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -22,91 +23,93 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
-      body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _Header(
-                      theme: theme,
-                      user: user,
-                      onLogout: () => showLogoutDialog(context),
+    return DoubleBackLogoutScope(
+      child: Scaffold(
+        body: SafeArea(
+          child: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _Header(
+                        theme: theme,
+                        user: user,
+                        onLogout: () => showLogoutDialog(context),
+                      ),
+                      const SizedBox(height: 20),
+                      _HeroCard(theme: theme),
+                      const SizedBox(height: 20),
+                      Text('Resumen general', style: theme.textTheme.headlineSmall),
+                      const SizedBox(height: 12),
+                      const _StatsGrid(),
+                      const SizedBox(height: 22),
+                      Text('Acciones rápidas', style: theme.textTheme.headlineSmall),
+                      const SizedBox(height: 12),
+                      const _QuickActions(),
+                      const SizedBox(height: 22),
+                      Text('Solicitudes recientes', style: theme.textTheme.headlineSmall),
+                      const SizedBox(height: 12),
+                    ],
+                  ),
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                sliver: SliverList.list(
+                  children: const [
+                    _RequestCard(
+                      title: 'Cambio de batería',
+                      location: 'Equipetrol, Santa Cruz',
+                      status: 'Urgente',
+                      eta: '12 min',
                     ),
-                    const SizedBox(height: 20),
-                    _HeroCard(theme: theme),
-                    const SizedBox(height: 20),
-                    Text('Resumen general', style: theme.textTheme.headlineSmall),
-                    const SizedBox(height: 12),
-                    const _StatsGrid(),
-                    const SizedBox(height: 22),
-                    Text('Acciones rápidas', style: theme.textTheme.headlineSmall),
-                    const SizedBox(height: 12),
-                    const _QuickActions(),
-                    const SizedBox(height: 22),
-                    Text('Solicitudes recientes', style: theme.textTheme.headlineSmall),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
+                    _RequestCard(
+                      title: 'Remolque urbano',
+                      location: 'Av. Banzer, Santa Cruz',
+                      status: 'En proceso',
+                      eta: '25 min',
+                    ),
+                    SizedBox(height: 12),
+                    _RequestCard(
+                      title: 'Falta de combustible',
+                      location: 'Zona Sur',
+                      status: 'Asignado',
+                      eta: '18 min',
+                    ),
+                    SizedBox(height: 22),
+                    _SectionTitle(title: 'Talleres disponibles'),
+                    SizedBox(height: 12),
+                    _WorkshopCard(
+                      name: 'Taller El Rápido',
+                      specialty: 'Mecánica general y electricidad',
+                      coverage: 'Centro y Equipetrol',
+                    ),
+                    SizedBox(height: 12),
+                    _WorkshopCard(
+                      name: 'Gruas del Oriente',
+                      specialty: 'Remolque y auxilio móvil',
+                      coverage: 'Ciudad y carretera',
+                    ),
+                    SizedBox(height: 24),
                   ],
                 ),
               ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              sliver: SliverList.list(
-                children: const [
-                  _RequestCard(
-                    title: 'Cambio de batería',
-                    location: 'Equipetrol, Santa Cruz',
-                    status: 'Urgente',
-                    eta: '12 min',
-                  ),
-                  SizedBox(height: 12),
-                  _RequestCard(
-                    title: 'Remolque urbano',
-                    location: 'Av. Banzer, Santa Cruz',
-                    status: 'En proceso',
-                    eta: '25 min',
-                  ),
-                  SizedBox(height: 12),
-                  _RequestCard(
-                    title: 'Falta de combustible',
-                    location: 'Zona Sur',
-                    status: 'Asignado',
-                    eta: '18 min',
-                  ),
-                  SizedBox(height: 22),
-                  _SectionTitle(title: 'Talleres disponibles'),
-                  SizedBox(height: 12),
-                  _WorkshopCard(
-                    name: 'Taller El Rápido',
-                    specialty: 'Mecánica general y electricidad',
-                    coverage: 'Centro y Equipetrol',
-                  ),
-                  SizedBox(height: 12),
-                  _WorkshopCard(
-                    name: 'Gruas del Oriente',
-                    specialty: 'Remolque y auxilio móvil',
-                    coverage: 'Ciudad y carretera',
-                  ),
-                  SizedBox(height: 24),
-                ],
-              ),
-            ),
+            ],
+          ),
+        ),
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: 0,
+          destinations: [
+            NavigationDestination(icon: Icon(Icons.dashboard_rounded), label: 'Inicio'),
+            NavigationDestination(icon: Icon(Icons.build_circle_outlined), label: 'Servicios'),
+            NavigationDestination(icon: Icon(Icons.groups_rounded), label: 'Talleres'),
+            NavigationDestination(icon: Icon(Icons.person_outline_rounded), label: 'Perfil'),
           ],
         ),
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 0,
-        destinations: [
-          NavigationDestination(icon: Icon(Icons.dashboard_rounded), label: 'Inicio'),
-          NavigationDestination(icon: Icon(Icons.build_circle_outlined), label: 'Servicios'),
-          NavigationDestination(icon: Icon(Icons.groups_rounded), label: 'Talleres'),
-          NavigationDestination(icon: Icon(Icons.person_outline_rounded), label: 'Perfil'),
-        ],
       ),
     );
   }

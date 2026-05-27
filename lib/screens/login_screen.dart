@@ -1,8 +1,18 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../app_routes.dart';
 import '../models/auth_models.dart';
+import 'emergency_request_screen.dart';
+import 'otp_request_screen.dart';
+import 'password_reset_screen.dart';
+import '../services/account_lookup_service.dart';
 import '../services/fake_auth_service.dart';
+import '../services/push_device_registration_service.dart';
 import '../utils/login_decoration.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -13,26 +23,129 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _emailController = TextEditingController(
-    text: 'cliente@emergencias.bo',
-  );
-  final TextEditingController _passwordController = TextEditingController(
-    text: 'cliente123',
-  );
+  static const String _rememberedLoginFileName = 'remembered_login.json';
+  static const int _maxLoginAttempts = 3;
+  static const Duration _loginLockDuration = Duration(seconds: 30);
+
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   String? _errorMessage;
   bool _isLoading = false;
   bool _obscurePassword = true;
+  bool _rememberMe = false;
+  int _failedLoginAttempts = 0;
+  DateTime? _loginLockedUntil;
+  Timer? _loginLockTimer;
+
+  UserRole get _selectedRole => UserRole.client;
+  bool get _isLoginLocked =>
+      _loginLockedUntil != null && DateTime.now().isBefore(_loginLockedUntil!);
+  int get _remainingLoginAttempts =>
+      (_maxLoginAttempts - _failedLoginAttempts).clamp(0, _maxLoginAttempts);
+  int get _remainingLockSeconds {
+    final lockedUntil = _loginLockedUntil;
+    if (lockedUntil == null) {
+      return 0;
+    }
+    final seconds = lockedUntil.difference(DateTime.now()).inSeconds;
+    return seconds > 0 ? seconds : 0;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRememberedLogin();
+  }
 
   @override
   void dispose() {
+    _loginLockTimer?.cancel();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
+  Future<File> _rememberedLoginFile() async {
+    final directory = await getApplicationDocumentsDirectory();
+    return File('${directory.path}/$_rememberedLoginFileName');
+  }
+
+  Future<void> _loadRememberedLogin() async {
+    try {
+      final file = await _rememberedLoginFile();
+      if (!await file.exists()) {
+        return;
+      }
+
+      final rawContent = await file.readAsString();
+      final decoded = jsonDecode(rawContent);
+      if (decoded is! Map<String, dynamic>) {
+        return;
+      }
+
+      final remember = decoded['remember_me'] == true;
+      final email = decoded['email']?.toString() ?? '';
+      final password = decoded['password']?.toString() ?? '';
+
+      if (!mounted || !remember) {
+        return;
+      }
+
+      setState(() {
+        _rememberMe = true;
+        _emailController.text = email;
+        _passwordController.text = password;
+      });
+    } catch (_) {
+      // Si el archivo guardado está corrupto, continuamos con el login normal.
+    }
+  }
+
+  Future<void> _persistRememberedLogin() async {
+    final file = await _rememberedLoginFile();
+
+    if (!_rememberMe) {
+      if (await file.exists()) {
+        await file.delete();
+      }
+      return;
+    }
+
+    await file.writeAsString(
+      jsonEncode({
+        'remember_me': true,
+        'email': _emailController.text.trim(),
+        'password': _passwordController.text,
+      }),
+    );
+  }
+
+  Future<void> _handleRememberChanged(bool? value) async {
+    final shouldRemember = value ?? false;
+
+    setState(() => _rememberMe = shouldRemember);
+
+    if (!shouldRemember) {
+      try {
+        await _persistRememberedLogin();
+      } catch (_) {
+        // Ignoramos errores de limpieza local para no bloquear la UI.
+      }
+    }
+  }
+
   Future<void> _submit() async {
     FocusScope.of(context).unfocus();
+
+    // El bloqueo es puramente del lado móvil para frenar intentos repetidos en la UI.
+    if (_isLoginLocked) {
+      setState(() {
+        _errorMessage =
+            'Has superado los $_maxLoginAttempts intentos. Intenta de nuevo en $_remainingLockSeconds s.';
+      });
+      return;
+    }
 
     final email = _emailController.text.trim();
     final password = _passwordController.text;
@@ -49,7 +162,8 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     if (password.length < 6) {
-      setState(() => _errorMessage = 'La contraseña debe tener al menos 6 caracteres.');
+      setState(() =>
+          _errorMessage = 'La contraseña debe tener al menos 6 caracteres.');
       return;
     }
 
@@ -57,6 +171,25 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = true;
       _errorMessage = null;
     });
+
+    final accountLookup =
+        await AccountLookupService.findAccountTypeByEmail(email);
+
+    if (!mounted) {
+      return;
+    }
+
+    if (accountLookup.hasMatch &&
+        accountLookup.accountType != _selectedRole &&
+        accountLookup.accountType != UserRole.admin) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = accountLookup.accountType == UserRole.client
+            ? 'Ese correo pertenece a un cliente.'
+            : 'Este acceso móvil es solo para clientes.';
+      });
+      return;
+    }
 
     final result = await FakeAuthService.signIn(
       email: email,
@@ -72,11 +205,71 @@ class _LoginScreenState extends State<LoginScreen> {
       _errorMessage = result.errorMessage;
     });
 
+    if (result.requiresPasswordChange) {
+      _resetLoginAttemptState();
+      final user = result.user!;
+      Navigator.of(context).pushReplacementNamed(
+        AppRoutes.passwordReset,
+        arguments: PasswordResetArgs(
+          email: user.email,
+          accountType: user.role,
+          isRequiredChange: true,
+        ),
+      );
+      return;
+    }
+
     if (!result.isSuccess) {
+      // Cada fallo consume un intento y puede disparar el bloqueo temporal.
+      _registerFailedLoginAttempt();
+      return;
+    }
+
+    // Un login correcto limpia el contador y el tiempo de bloqueo.
+    _resetLoginAttemptState();
+
+    try {
+      await _persistRememberedLogin();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No se pudo guardar la preferencia de Recordar.'),
+          ),
+        );
+      }
+    }
+
+    if (!mounted) {
       return;
     }
 
     final user = result.user!;
+    await PushDeviceRegistrationService.updateCurrentClientUserId(
+      user.role == UserRole.client ? user.id : null,
+    );
+
+    if (user.role != UserRole.client) {
+      setState(() {
+        _errorMessage = 'Este acceso es solo para clientes.';
+      });
+      return;
+    }
+
+    if (user.role == UserRole.client) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => EmergencyRequestScreen(
+            args: EmergencyRequestArgs(
+              user: user,
+              clientId: user.id,
+            ),
+          ),
+        ),
+      );
+      return;
+    }
+
     final routeName = switch (user.role) {
       UserRole.client => AppRoutes.clientHome,
       UserRole.workshop => AppRoutes.workshopHome,
@@ -84,6 +277,117 @@ class _LoginScreenState extends State<LoginScreen> {
     };
 
     Navigator.of(context).pushReplacementNamed(routeName, arguments: user);
+  }
+
+  void _registerFailedLoginAttempt() {
+    final nextAttempts = _failedLoginAttempts + 1;
+    if (nextAttempts >= _maxLoginAttempts) {
+      _startLoginLock();
+      return;
+    }
+
+    setState(() {
+      _failedLoginAttempts = nextAttempts;
+      final remaining = _maxLoginAttempts - nextAttempts;
+      _errorMessage =
+          '${_errorMessage ?? 'No se pudo iniciar sesión.'} Intentos restantes: $remaining.';
+    });
+  }
+
+  void _startLoginLock() {
+    _loginLockTimer?.cancel();
+    final lockedUntil = DateTime.now().add(_loginLockDuration);
+    setState(() {
+      _failedLoginAttempts = _maxLoginAttempts;
+      _loginLockedUntil = lockedUntil;
+      _errorMessage =
+          'Has superado los $_maxLoginAttempts intentos. Intenta de nuevo en ${_loginLockDuration.inSeconds} s.';
+    });
+
+    // El timer solo refresca el mensaje visual mientras dura el enfriamiento.
+    _loginLockTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
+      if (!_isLoginLocked) {
+        timer.cancel();
+        setState(() {
+          _failedLoginAttempts = 0;
+          _loginLockedUntil = null;
+          if (_errorMessage != null &&
+              _errorMessage!
+                  .contains('Has superado los $_maxLoginAttempts intentos')) {
+            _errorMessage = null;
+          }
+        });
+        return;
+      }
+
+      setState(() {
+        _errorMessage =
+            'Has superado los $_maxLoginAttempts intentos. Intenta de nuevo en $_remainingLockSeconds s.';
+      });
+    });
+  }
+
+  void _resetLoginAttemptState() {
+    _loginLockTimer?.cancel();
+    _failedLoginAttempts = 0;
+    _loginLockedUntil = null;
+  }
+
+  Future<void> _openForgotPasswordFlow() async {
+    FocusScope.of(context).unfocus();
+
+    final email = _emailController.text.trim();
+    final emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+
+    if (email.isEmpty) {
+      setState(() {
+        _errorMessage = 'Ingresa tu correo antes de recuperar la contraseña.';
+      });
+      return;
+    }
+
+    if (!emailPattern.hasMatch(email)) {
+      setState(() => _errorMessage = 'Ingresa un correo válido.');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    final accountLookup =
+        await AccountLookupService.findAccountTypeByEmail(email);
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() => _isLoading = false);
+
+    if (accountLookup.hasMatch &&
+        accountLookup.accountType != _selectedRole &&
+        accountLookup.accountType != UserRole.admin) {
+      setState(() {
+        _errorMessage = accountLookup.accountType == UserRole.client
+            ? 'Ese correo pertenece a un cliente.'
+            : 'La recuperación desde esta app está disponible solo para clientes.';
+      });
+      return;
+    }
+
+    Navigator.of(context).pushNamed(
+      AppRoutes.otpRequest,
+      arguments: OtpRequestArgs(
+        email: email,
+        accountType: _selectedRole,
+      ),
+    );
   }
 
   @override
@@ -184,14 +488,64 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           const SizedBox(height: 10),
                           const Text(
-                            'Accede a tu cuenta para continuar con la asistencia.',
+                            'Acceso móvil para clientes con emergencias vehiculares.',
                             style: TextStyle(
                               fontSize: 15,
                               height: 1.4,
                               color: Color(0xFF55637C),
                             ),
                           ),
+                          const SizedBox(height: 18),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFF7DB),
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(
+                                color: const Color(0xFFE7D28A),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 42,
+                                  height: 42,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: Icon(
+                                    Icons.person_rounded,
+                                    color: const Color(0xFF123F78),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    'Esta vista de emergencias vehiculares está disponible únicamente para clientes.',
+                                    style: const TextStyle(
+                                      color: Color(0xFF55637C),
+                                      height: 1.35,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                           const SizedBox(height: 28),
+                          if (!_isLoginLocked && _failedLoginAttempts > 0)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: Text(
+                                'Intentos disponibles: $_remainingLoginAttempts de $_maxLoginAttempts',
+                                style: const TextStyle(
+                                  color: Color(0xFF123F78),
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
                           TextField(
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
@@ -233,6 +587,31 @@ class _LoginScreenState extends State<LoginScreen> {
                             },
                           ),
                           const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Transform.translate(
+                                offset: const Offset(-10, 0),
+                                child: Checkbox(
+                                  value: _rememberMe,
+                                  activeColor: const Color(0xFF123F78),
+                                  onChanged: _isLoading
+                                      ? null
+                                      : (value) =>
+                                          _handleRememberChanged(value),
+                                ),
+                              ),
+                              const Expanded(
+                                child: Text(
+                                  'Recordar',
+                                  style: TextStyle(
+                                    color: Color(0xFF123F78),
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
                           AnimatedSwitcher(
                             duration: const Duration(milliseconds: 200),
                             child: _errorMessage == null
@@ -271,11 +650,14 @@ class _LoginScreenState extends State<LoginScreen> {
                           SizedBox(
                             width: double.infinity,
                             child: FilledButton(
-                              onPressed: _isLoading ? null : _submit,
+                              onPressed: (_isLoading || _isLoginLocked)
+                                  ? null
+                                  : _submit,
                               style: FilledButton.styleFrom(
                                 backgroundColor: const Color(0xFF123F78),
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
                               ),
                               child: _isLoading
                                   ? const SizedBox(
@@ -299,13 +681,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           Align(
                             alignment: Alignment.center,
                             child: TextButton(
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Flujo de recuperación en construcción.'),
-                                  ),
-                                );
-                              },
+                              onPressed:
+                                  _isLoading ? null : _openForgotPasswordFlow,
                               child: const Text(
                                 '¿Olvidaste tu contraseña?',
                                 style: TextStyle(color: Color(0xFF123F78)),
@@ -323,32 +700,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                 'Registrarse como cliente',
                                 style: TextStyle(color: Color(0xFF123F78)),
                               ),
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                          Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFF7DB),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: const Color(0xFFFFE082)),
-                            ),
-                            child: const Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Accesos de prueba',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                    color: Color(0xFF123F78),
-                                  ),
-                                ),
-                                SizedBox(height: 8),
-                                Text('Cliente: cliente@emergencias.bo / cliente123'),
-                                Text('Taller: taller@emergencias.bo / taller123'),
-                                Text('Administrador: admin@emergencias.bo / admin123'),
-                                Text('Suspendido: suspendido@emergencias.bo / suspendido123'),
-                              ],
                             ),
                           ),
                         ],

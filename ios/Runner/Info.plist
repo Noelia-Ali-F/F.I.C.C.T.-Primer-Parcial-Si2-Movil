@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Ficct Primer Parcial Si2 Diagramador Movil</string>
+	<string>Taller ACB</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -13,7 +13,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>ficct_primer_parcial_si2_diagramador_movil</string>
+	<string>Taller ACB</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -47,10 +47,17 @@
 	<string>AIzaSyDG9SDXFcfLudzrRWddzGBt1fpQK4TGHh0</string>
 	<key>NSCameraUsageDescription</key>
 	<string>La app necesita usar la camara para registrar evidencia de la emergencia.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>La app necesita acceso al microfono para grabar audio de la emergencia.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>La app necesita tu ubicacion para mostrar y marcar emergencias cercanas.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>La app necesita acceso a tus fotos para adjuntar evidencia del vehiculo.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 </dict>

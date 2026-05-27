@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../models/vehicle_models.dart';
+import '../services/vehicle_service.dart';
+
 class VehicleRegistrationResult {
   const VehicleRegistrationResult({
     required this.summary,
@@ -11,7 +14,12 @@ class VehicleRegistrationResult {
 }
 
 class VehicleRegistrationScreen extends StatefulWidget {
-  const VehicleRegistrationScreen({super.key});
+  const VehicleRegistrationScreen({
+    super.key,
+    required this.clientId,
+  });
+
+  final int? clientId;
 
   @override
   State<VehicleRegistrationScreen> createState() =>
@@ -40,6 +48,7 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
 
   int _selectedColorIndex = 0;
   bool _isPrimaryVehicle = true;
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -50,16 +59,78 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
     super.dispose();
   }
 
-  void _saveVehicle() {
+  Future<void> _saveVehicle() async {
     final isValid = _formKey.currentState?.validate() ?? false;
-    if (!isValid) {
+    if (!isValid || _isSubmitting) {
+      return;
+    }
+
+    final clientId = widget.clientId;
+    if (clientId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se encontró el identificador del cliente autenticado.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    final colorLabels = ['blanco', 'gris', 'dorado', 'negro'];
+    final vehicleData = VehicleRegistrationData(
+      clientId: clientId,
+      brand: _brandController.text.trim(),
+      model: _modelController.text.trim(),
+      year: int.parse(_yearController.text.trim()),
+      plate: _plateController.text.trim().toUpperCase(),
+      color: colorLabels[_selectedColorIndex],
+      isPrimary: _isPrimaryVehicle,
+    );
+
+    final response = await VehicleService.registerVehicle(vehicleData);
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() => _isSubmitting = false);
+
+    if (!response.isSuccess) {
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Registro no enviado'),
+          content: Text(
+            response.statusCode == 0
+                ? response.message
+                : 'Backend: ${response.statusCode}\n${response.message}',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cerrar'),
+            ),
+          ],
+        ),
+      );
       return;
     }
 
     final result = VehicleRegistrationResult(
       summary:
-          '${_brandController.text.trim()} ${_modelController.text.trim()} · ${_plateController.text.trim()}',
+          '${vehicleData.brand} ${vehicleData.model} ${vehicleData.year} · ${vehicleData.plate}',
       isPrimary: _isPrimaryVehicle,
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          response.vehicleId == null
+              ? response.message
+              : '${response.message} ID ${response.vehicleId}.',
+        ),
+      ),
     );
 
     Navigator.of(context).pop(result);
@@ -288,7 +359,7 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
                       Expanded(
                         child: FilledButton(
                           onPressed: _saveVehicle,
-                    style: FilledButton.styleFrom(
+                          style: FilledButton.styleFrom(
                             backgroundColor: const Color(0xFFD8AD20),
                             foregroundColor: const Color(0xFF123F78),
                             padding: const EdgeInsets.symmetric(vertical: 15),
@@ -296,10 +367,19 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
                               borderRadius: BorderRadius.circular(14),
                             ),
                           ),
-                          child: const Text(
-                            'Guardar',
-                            style: TextStyle(fontWeight: FontWeight.w800),
-                          ),
+                          child: _isSubmitting
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Color(0xFF123F78),
+                                  ),
+                                )
+                              : const Text(
+                                  'Guardar',
+                                  style: TextStyle(fontWeight: FontWeight.w800),
+                                ),
                         ),
                       ),
                     ],
